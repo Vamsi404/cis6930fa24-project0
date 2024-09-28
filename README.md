@@ -23,7 +23,7 @@ pipenv install
 
 ## How to run
 ```bash
-pipenv run python main.py
+pipenv run python3 main.py --incidents url
 ```
 Ensure you have the correct URL for the PDF report passed as an argument.
 
