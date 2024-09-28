@@ -1,8 +1,10 @@
 
 # cis6930fa24 -- Project 0 -- Incident Report Data Analysis
 
-**Name:** Vamsi Manda
-**Name:** Vamsi Manda
+### 🕵️ Name
+- Vamsi Manda
+- UFID: 43226231
+- vmanda@ufl.edu
 
 ---
 
