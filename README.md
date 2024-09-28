@@ -2,10 +2,11 @@
 # cis6930fa24 -- Project 0 -- Incident Report Data Analysis
 
 **Name:** Vamsi Manda
+**Name:** Vamsi Manda
 
 ---
 
-## Project Description (in your own words)
+## Project Description
 
 This project extracts incident data from PDFs provided by the Norman, Oklahoma police department, processes the extracted data, and stores it in an SQLite database. The extracted data includes fields such as incident time, number, location, and nature of the incident. The database is then queried to count the number of incidents for each incident type, presenting a summary of the most common occurrences.
 
