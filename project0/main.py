@@ -34,7 +34,7 @@ def create_database():
         return None
 
 
-#insert formatted pdf data into DB
+#insert formatted pdf data into DBs
 def populate_database(connection, data):
     cursor = connection.cursor()
     cursor.execute('DELETE FROM incidents')
