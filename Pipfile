@@ -6,6 +6,7 @@ name = "pypi"
 [packages]
 pypdf2 = "*"
 pypdf = "*"
+pytest = "*"
 
 [dev-packages]
 
