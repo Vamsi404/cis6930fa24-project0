@@ -43,22 +43,22 @@ Ensure you have the correct URL for the PDF report passed as an argument.
   **Process**: Downloads the PDF from the specified URL if it doesn't already exist at the given destination path.  
   **Returns**: None
 
-- **`createdb()`**:  
+- **`create_database()`**:  
   **Parameters**: None  
   **Process**: Connects to the SQLite database or creates a new one and initializes the incidents table.  
   **Returns**: A connection object for the SQLite database.
 
-- **`populatedb(conn, incidents)`**:  
+- **`populate_database(conn, incidents)`**:  
   **Parameters**: `conn` (SQLite connection object), `incidents` (list of tuples)  
   **Process**: Clears the existing data in the incidents table, then inserts the new incidents data into the database.  
   **Returns**: None
 
-- **`status(conn)`**:  
+- **`display_status(conn)`**:  
   **Parameters**: `conn` (SQLite connection object)  
   **Process**: Queries the database to count the number of incidents for each type (nature) and prints the results sorted by the frequency of events.  
   **Returns**: None
 
-- **`extract_last_capital_onwards(s)`**:  
+- **`get_last_capital_segment(s)`**:  
   **Parameters**: `s` (string)  
   **Process**: Identifies and extracts the last word in the string that starts with an uppercase letter, often used to separate locations from the nature of the incident.  
   **Returns**: A string representing the extracted part of the input.
