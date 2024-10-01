@@ -88,4 +88,4 @@ The `createdb()` function checks for the existence of the `incidents` table, cre
 ---
 
 ## Video Walkthrough
-![video](video)
+https://github.com/user-attachments/assets/b4972027-6779-4416-ae08-49d51f747f23
