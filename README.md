@@ -28,7 +28,11 @@ pipenv run python3 main.py --incidents url
 Ensure you have the correct URL for the PDF report passed as an argument.
 
 ---
-
+## How to run test
+```bash
+pipenv run python -m pytest -v
+```
+---
 ## Functions
 
 #### `main.py`
