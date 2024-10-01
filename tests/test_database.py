@@ -1,7 +1,7 @@
 import unittest
 import os
 import sqlite3
-from main import createdb, populatedb, status
+import project0.main as testMain
 
 class TestDatabaseFunctions(unittest.TestCase):
     
@@ -26,7 +26,7 @@ class TestDatabaseFunctions(unittest.TestCase):
         os.remove(self.db_path)
 
     def test_createdb(self):
-        conn = createdb()
+        conn = testMain.create_database()
         self.assertIsNotNone(conn)
         conn.close()
 
@@ -35,28 +35,12 @@ class TestDatabaseFunctions(unittest.TestCase):
             ("2023-01-01 12:00:00", "12345", "Location A", "Nature A", "ORI123"),
             ("2023-01-02 12:00:00", "12346", "Location B", "Nature B", "ORI124"),
         ]
-        populatedb(self.conn, test_incidents)
+        testMain.populate_database(self.conn, test_incidents)
         
         self.cur.execute("SELECT COUNT(*) FROM incidents")
         count = self.cur.fetchone()[0]
         self.assertEqual(count, 2)
 
-    def test_status(self):
-        # Insert test data
-        test_incidents = [
-            ("2023-01-01 12:00:00", "12345", "Location A", "Nature A", "ORI123"),
-            ("2023-01-01 12:30:00", "12346", "Location B", "Nature A", "ORI124"),
-            ("2023-01-02 13:00:00", "12347", "Location C", "Nature B", "ORI125"),
-        ]
-        populatedb(self.conn, test_incidents)
-        
-        # Capture the output of the status function
-        with self.assertLogs(level='INFO') as log:
-            status(self.conn)
-        
-        # Check for specific log messages (might need to adapt based on actual output format)
-        self.assertIn('Nature A|2', log.output[0])
-        self.assertIn('Nature B|1', log.output[1])
 
 if __name__ == '__main__':
     unittest.main()

@@ -24,7 +24,7 @@ def download_pdf(url, save_path):
 #establish connection to sqlite and create incidents table if not present
 def create_database():
     try:
-        connection = sqlite3.connect('../resources/normanpd.db')
+        connection = sqlite3.connect('./resources/normanpd.db')
         cursor = connection.cursor()
         cursor.execute('''CREATE TABLE IF NOT EXISTS incidents (
                     incident_time TEXT, incident_number TEXT, incident_location TEXT, nature TEXT, incident_ori TEXT)''')
