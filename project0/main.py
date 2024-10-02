@@ -11,13 +11,12 @@ os.makedirs('./tmp', exist_ok=True)
 
 # Download the PDF if it doesn't exist
 def download_pdf(url, save_path):
-    if not os.path.isfile(save_path):
-        print(f"Initiating download from {url}...")
+        # print(f"Initiating download from {url}...")
         try:
             urlretrieve(url, save_path)
-            print(f"Download complete. PDF saved at {save_path}")
+            # `print(f"Download complete. PDF saved at {save_path}")
         except Exception as error:
-            print(f"Error during download: {error}")
+            # print(f"Error during download: {error}")
             raise
 
 
@@ -30,7 +29,7 @@ def create_database():
                     incident_time TEXT, incident_number TEXT, incident_location TEXT, nature TEXT, incident_ori TEXT)''')
         return connection
     except Error as err:
-        print(f"Database error: {err}")
+        # print(f"Database error: {err}")
         return None
 
 
