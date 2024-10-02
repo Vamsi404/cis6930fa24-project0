@@ -46,14 +46,9 @@ def populate_database(connection, data):
 def display_status(connection):
     cursor = connection.cursor()
     cursor.execute('''SELECT nature, COUNT(*) AS event_count 
-FROM incidents 
-GROUP BY nature 
-ORDER BY 
-    CASE 
-        WHEN nature GLOB '[A-Za-z]*' THEN 0 
-        ELSE 1 
-    END, 
-    nature ASC''')
+                      FROM incidents 
+                      GROUP BY nature 
+                      ORDER BY nature ASC''')
     records = cursor.fetchall()
     for record in records:
         print(f"{record[0]} | {record[1]}")
@@ -73,82 +68,37 @@ def get_last_capital_segment(string):
 def extract_incidents():
     pdf_reader = PdfReader("./tmp/Incident_Report.pdf")
     incidents_list = []
-    lines_list = []
-    
+
     for page in pdf_reader.pages:
-        lines_list += (page.extract_text()
-                          .replace("NORMAN", "")
-                          .replace("POLICE", "")
-                          .replace("DEPARTMENT", "")
-                          .split('\n'))
-
-    # Remove the last line containing the date only
-    lines_list.pop()
-
-    for i in range(len(lines_list)):
-        current_line = lines_list[i].strip().split(' ')
-        incident = []
-        line_length = len(current_line)
-
-        if i == 0 or current_line[0] == "Daily":
-            continue
-
-        if line_length < 6 and not re.match(r".*?/.*?/.*?", current_line[0]):
-            incidents_list.pop()
-            # If the incident information is split across two lines, extract location and nature separately
-            split_nature = lines_list[i].strip().split(' ')
-            for j in range(len(split_nature)):
-                previous_text = split_nature[j]
-                split_nature[j] = get_last_capital_segment(previous_text)
-                
-                # Stop at the first occurrence of nature text
-                if previous_text != split_nature[j] and split_nature[j] != "":
-                    break
-
-            current_line = lines_list[i-1].strip().split(' ') + split_nature
-            line_length = len(current_line)
+        content = page.extract_text(extraction_mode="layout")
+        lines = content.split("\n")
         
-        incident_time = current_line[0] + ' ' + current_line[1]
-        incident_number = current_line[2]
-        incident_ori = current_line[line_length - 1]
-        
-        incident.append(incident_time)
-        incident.append(incident_number)
-        
-        if line_length < 5:
-            incident_location = ""
-        else:
-            incident_location = current_line[3] + ' '
-        
-        incident_nature = ""
-        is_nature = False
-        
-        # Constructing the incident location and nature, handling edge cases
-        for j, segment in enumerate(current_line):
-            if j == line_length - 1 or segment == "":
-                continue
-
-            if is_nature:
-                incident_nature += segment + ' '
+        for line in lines:
+            if line.startswith("    "):  # Skip headings or conclusions
                 continue
             
-            if j >= 4:
-                if segment.isdigit():
-                    if segment == "911":
-                        is_nature = True
-                        incident_nature += segment + ' '
-                    else:
-                        incident_location += segment + ' '
-                elif (segment in ["MVA", "COP", "DDACTS", "EMS"] or not segment.isupper()) and segment not in ['/'] and not re.match(r"^\d{1}/\d{1}", segment):
-                    is_nature = True
-                    incident_nature += segment + ' '
-                else:
-                    incident_location += segment + ' '
-
-        incident.append(incident_location.strip())
-        incident.append(incident_nature.strip())
-        incident.append(incident_ori)
-        incidents_list.append(incident)
+            # Split the line based on 4 or more spaces
+            data_array = [e.strip() for e in re.split(r"\s{4,}", line.strip())]
+            
+            # Check the structure of the data
+            if len(data_array) == 5:
+                # Full incident information
+                incident_time = data_array[0]
+                incident_number = data_array[1]
+                incident_location = data_array[2]
+                incident_nature = data_array[3]
+                incident_ori = data_array[4]
+                incident = (incident_time, incident_number, incident_location, incident_nature, incident_ori)
+                incidents_list.append(incident)
+            elif len(data_array) == 3:
+                # Incident information might be split
+                incident_time = data_array[0]
+                incident_number = data_array[1]
+                incident_location = ""
+                incident_nature = ""
+                incident_ori = data_array[2]
+                incident = (incident_time, incident_number, incident_location, incident_nature, incident_ori)
+                incidents_list.append(incident)
 
     # Convert to a list of tuples
     incidents_tuples = [tuple(incident) for incident in incidents_list]
