@@ -102,8 +102,8 @@ def extract_incidents():
                 incidents_list.append(incident)
 
     # Convert to a list of tuples
-    incidents_tuples = [tuple(incident) for incident in incidents_list]
-    return incidents_tuples
+    # incidents_tuples = [tuple(incident) for incident in incidents_list]
+    return incidents_list
 
 def main(url):
     # Step 1: Download the PDF data
