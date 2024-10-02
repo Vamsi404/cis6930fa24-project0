@@ -1,119 +1,132 @@
 import argparse
 import urllib.request
+from urllib.request import urlopen,urlretrieve
 import pypdf
-import re
+from pypdf import PdfReader
 import sqlite3
-import pandas as pd
+from sqlite3 import Error
+import re
 import os
+os.makedirs('./tmp', exist_ok=True)
 
-MODE_EXTRACTION = "layout"
-MODE_LAYOUT = False
+# Download the PDF if it doesn't exist
+def download_pdf(url, save_path):
+    if not os.path.isfile(save_path):
+        print(f"Initiating download from {url}...")
+        try:
+            urlretrieve(url, save_path)
+            print(f"Download complete. PDF saved at {save_path}")
+        except Exception as error:
+            print(f"Error during download: {error}")
+            raise
+
+
+#establish connection to sqlite and create incidents table if not present
+def create_database():
+    try:
+        connection = sqlite3.connect('./resources/normanpd.db')
+        cursor = connection.cursor()
+        cursor.execute('''CREATE TABLE IF NOT EXISTS incidents (
+                    incident_time TEXT, incident_number TEXT, incident_location TEXT, nature TEXT, incident_ori TEXT)''')
+        return connection
+    except Error as err:
+        print(f"Database error: {err}")
+        return None
+
+
+#insert formatted pdf data into DBs
+def populate_database(connection, data):
+    cursor = connection.cursor()
+    cursor.execute('DELETE FROM incidents')
+    cursor.executemany('INSERT INTO incidents (incident_time, incident_number, incident_location, nature, incident_ori) VALUES (?,?,?,?,?)', data)
+    connection.commit()
+
+
+#Print Nature|Count(*)
+def display_status(connection):
+    cursor = connection.cursor()
+    cursor.execute('''SELECT nature, COUNT(*) AS event_count 
+                      FROM incidents 
+                      GROUP BY nature 
+                      ORDER BY nature ASC''')
+    records = cursor.fetchall()
+    for record in records:
+        print(f"{record[0]}|{record[1]}")
+
+
+
+def get_last_capital_segment(string):
+    result = re.search(r'[A-Z][a-z]+$|(MVA|COP|EMS|DDACTS|911)$', string)
+
+    if result:
+        return result.group()
+    else:
+        return ""
+
+
+#Split pdf string data by newline and then format each row of pdf to get the required values
+def extract_incidents():
+    pdf_reader = PdfReader("./tmp/Incident_Report.pdf")
+    incidents_list = []
+
+    for page in pdf_reader.pages:
+        content = page.extract_text(extraction_mode="layout", layout_mode_space_vertically=False,
+                                               layout_mode_scale_weight=2.0)
+        lines = content.split("\n")
+        
+        for line in lines:
+            if line.startswith("    "):  # Skip headings or conclusions
+                continue
+            
+            # Split the line based on 4 or more spaces
+            data_array = [e.strip() for e in re.split(r"\s{4,}", line.strip())]
+            
+            # Check the structure of the data
+            if len(data_array) == 5:
+                # Full incident information
+                incident_time = data_array[0]
+                incident_number = data_array[1]
+                incident_location = data_array[2]
+                incident_nature = data_array[3]
+                incident_ori = data_array[4]
+                incident = (incident_time, incident_number, incident_location, incident_nature, incident_ori)
+                incidents_list.append(incident)
+            elif len(data_array) == 3:
+                # Incident information might be split
+                incident_time = data_array[0]
+                incident_number = data_array[1]
+                incident_location = ""
+                incident_nature = ""
+                incident_ori = data_array[2]
+                incident = (incident_time, incident_number, incident_location, incident_nature, incident_ori)
+                incidents_list.append(incident)
+
+    # Convert to a list of tuples
+    incidents_tuples = [tuple(incident) for incident in incidents_list]
+    return incidents_tuples
 
 def main(url):
-    stats, pdf = fetch_incidents(url)
-    if stats == 200:
-        incidents = extract_incidents(pdf)
-        db = create_db()
-        populate_db(db, incidents)
-        status(db)
-    else:
-        print("Unable to fetch data")
+    # Step 1: Download the PDF data
+    download_pdf(url, "./tmp/Incident_Report.pdf")
+    
+    # Step 2: Extract the incidents from the PDF
+    incidents_data = extract_incidents()
+    # print(incidents_data)
+    
+    # Step 3: Create a new SQLite database
+    connection = create_database()
 
-
-def fetch_incidents(url):
-    response = urllib.request.urlopen(url)
-    with open("./resources/data.pdf", "wb") as file:
-        file.write(response.read())
-    return response.getcode(), "./resources/data.pdf"
-
-
-def create_db():
-    db_path = "./resources/normanpd.db"
-    if os.path.exists(db_path):
-        os.remove(db_path)
-    con = sqlite3.connect(db_path)
-    cur = con.cursor()
-    cur.execute("""
-        CREATE TABLE incidents (
-            incident_time TEXT,
-            incident_number TEXT,
-            incident_location TEXT,
-            incident_nature TEXT,
-                incident_ori TEXT
-        )
-    """)
-    con.commit()
-    return con
-
-def extract_incidents(pdf_filepath):
-    gathered_data = []
-    pdf_reader = pypdf.PdfReader(pdf_filepath)
-    for page in pdf_reader.pages:
-        text = page.extract_text(layout_mode_space_vertically=MODE_LAYOUT, extraction_mode=MODE_EXTRACTION)
-        if check_page(page):
-            gathered_data.extend(text.split('\n'))
-        else:
-            print("No Text Found")
-    parsed_records = parse_lines(gathered_data)
-    df = pd.DataFrame(parsed_records, columns=["incident_time", "incident_number", "incident_location", "incident_nature","incident_ori"])
-    return df
-
-
-def process_line(input_line):
-    components = re.split(r'\s{2,}', input_line)
-    if not components or components[0].strip() == "":
-        return None
-    cleaned_components = [comp.strip() for comp in components]
-    return complete_pattern_s(cleaned_components)
-
-# Function to ensure the list has at least 5 elements
-def complete_pattern_s(pattern_s):
-    return pattern_s + [''] * (5 - len(pattern_s))
-
-# Main function that processes the data
-def parse_lines(data):
-    return [processed for line in data[3:-1]
-            if (processed := process_line(line)) is not None]
-
-def check_page(page):
-    if(page):
-        return True
-    return False
-
-def skip_text(line):
-    return line.startswith("Daily") or "NORMAN POLICE DEPARTMENT" in line
-
-
-def process_multiline(lines, line, index):
-    list_words = line.split(" ")
-
-    if len(list_words) == 2:
-        return list_words  # Malformed line, skip further processing
-
-    if index < len(lines) - 2:
-        next_line = lines[index + 1].split(" ")
-        if len(next_line) < 7 and len(next_line) > 2:
-            list_words += next_line  # Merge the next line into the current one
-
-    return list_words
-
-
-def populate_db(db, incidents):
-    incidents.to_sql('incidents', db, if_exists='replace', index=False)
-
-
-def status(db):
-    cur = db.cursor()
-    cur.execute("SELECT incident_nature, COUNT(*) FROM incidents GROUP BY incident_nature ORDER BY incident_nature ASC")
-    rows = cur.fetchall()
-    db.close()
-
-    for row in rows:
-        print(f"{row[0]}|{row[1]}")
-
+    # Step 4: Populate the database with extracted data
+    populate_database(connection, incidents_data)
+    
+    # Step 5: Display the status of incident counts
+    display_status(connection)
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
-    parser.add_argument("--incidents", type=str, required=True, help="Incident summary URL.")
+    parser.add_argument("--incidents", type=str, required=True, 
+                         help="Incident summary url.")
+     
     args = parser.parse_args()
-    main(args.incidents)
+    if args.incidents:
+        main(args.incidents)
