@@ -70,7 +70,8 @@ def extract_incidents():
     incidents_list = []
 
     for page in pdf_reader.pages:
-        content = page.extract_text(extraction_mode="layout")
+        content = page.extract_text(extraction_mode="layout", layout_mode_space_vertically=False,
+                                               layout_mode_scale_weight=2.0)
         lines = content.split("\n")
         
         for line in lines:
