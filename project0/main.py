@@ -48,7 +48,7 @@ def display_status(connection):
     cursor.execute('''SELECT nature, COUNT(*) AS event_count 
                       FROM incidents 
                       GROUP BY nature 
-                      ORDER BY event_count DESC, nature ASC''')
+                      ORDER BY  nature ASC''')
     records = cursor.fetchall()
     for record in records:
         print(f"{record[0]} | {record[1]}")
