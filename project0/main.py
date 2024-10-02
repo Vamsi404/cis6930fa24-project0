@@ -51,7 +51,7 @@ def display_status(connection):
                       ORDER BY nature ASC''')
     records = cursor.fetchall()
     for record in records:
-        print(f"{record[0]} | {record[1]}")
+        print(f"{record[0]}|{record[1]}")
 
 
 
