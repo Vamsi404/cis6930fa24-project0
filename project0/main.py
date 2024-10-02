@@ -107,7 +107,7 @@ def extract_incidents():
 
 def main(url):
     # Step 1: Download the PDF data
-    download_pdf(url, "./tmp/Incident_Report.pdf")
+    download_pdf(url, "./resources/Incident_Report.pdf")
     
     # Step 2: Extract the incidents from the PDF
     incidents_data = extract_incidents()
