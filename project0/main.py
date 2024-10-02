@@ -46,11 +46,9 @@ def populate_database(connection, data):
 def display_status(connection):
     cursor = connection.cursor()
     cursor.execute('''SELECT nature, COUNT(*) AS event_count 
-FROM incidents 
-GROUP BY nature 
-ORDER BY nature ASC 
-LIMIT -1 OFFSET 3;
-''')
+                      FROM incidents 
+                      GROUP BY nature 
+                      ORDER BY  nature ASC''')
     records = cursor.fetchall()
     for record in records:
         print(f"{record[0]} | {record[1]}")
